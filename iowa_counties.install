@@ -1,0 +1,85 @@
+<?php
+/**
+ * @file
+ *
+ * Install iowa_counties
+ */
+
+
+/**
+ * Implements hook_requirements().
+ */
+function iowa_counties_requirements($phase) {
+  $requirements = array();
+
+  // Make sure the vocabulary doesn't exist before installing.
+  if ($phase == 'install') {
+    if (taxonomy_vocabulary_machine_name_load('iowa_counties')) {
+      $requirements['vocabulary_already_exists'] = array(
+        'title' => t('Vocabulary "iowa_counties" already exists. Unable to install.'),
+        'description' => t('Vocabulary "iowa_counties" already exists. Unable to install.'),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+  }
+
+  return $requirements;
+}
+
+
+/**
+ * Implements hook_install().
+ */
+function iowa_counties_install() {
+  _iowa_counties_install_vocabulary();
+}
+
+/**
+ * Implements hook_enable().
+ */
+function iowa_counties_enable() {
+  if (taxonomy_vocabulary_machine_name_load('iowa_counties') == FALSE) {
+    // For some reason the vocabulary was deleted. We need to re-install it.
+    _iowa_counties_install_vocabulary();
+  }
+}
+
+
+/**
+ * Implements hook_uninstall().
+ */
+function iowa_counties_uninstall() {
+  // Delete the iowa_counties vocabulary on uninstall.
+  $vocabulary = taxonomy_vocabulary_machine_name_load('iowa_counties');
+  taxonomy_vocabulary_delete($vocabulary->vid);
+}
+
+
+/**
+ * Creates and populates the iowa_counties vocabulary.
+ */
+function _iowa_counties_install_vocabulary() {
+  // Create the Iowa Counties vocabulary.
+  $new_iowa_counties = (object) array(
+    'name' => 'Iowa Counties',
+    'description' => 'Vocabulary that contains all 99 Iowa counties',
+    'machine_name' => 'iowa_counties',
+  );
+  taxonomy_vocabulary_save($new_iowa_counties);
+
+  // Populate the Iowa Counties vocabulary.
+  $iowa_counties = taxonomy_vocabulary_machine_name_load('iowa_counties');
+
+  // Load counties from iowa_counties.txt and make it a nice array to iterate over.
+  $counties = file(drupal_get_path('module', 'iowa_counties') . '/iowa_counties.txt');
+
+  foreach ($counties as $county) {
+    $term = (object) array(
+      'name' => $county,
+      'description' => '',
+      'vid' => $iowa_counties->vid,
+    );
+
+    taxonomy_term_save($term);
+  }
+}
