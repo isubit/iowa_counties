@@ -47,8 +47,9 @@ function iowa_counties_block_configure($delta = '') {
     $form['iowa_counties_link_prefix'] = array(
       '#type' => 'textfield',
       '#title' => t('Link Prefix'),
-      '#description' => t('Prefix the link for each county to a drupal path. Do not begin or end with a /. Eg If you have a view at http://example.edu/wildlife-contacts/%1 that takes county name as an argument enter \'wildlife-contacts\'.'),
+      '#description' => t('Prefix the link for each county to a drupal path. DO NOT begin or end with a /. Eg If you have a view at http://example.edu/wildlife-contacts/%1 that takes county name as an argument enter \'wildlife-contacts\'.'),
       '#size' => 60,
+      '#default_value' => variable_get('iowa_counties_links_prefix', NULL),
     );
   }
 
