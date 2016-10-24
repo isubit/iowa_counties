@@ -2,5 +2,89 @@
 /**
  * @file
  *
- * This file intentionally left blank. All the work is done in iowa_counties.install.
+ * Hooks and functions for iowa_counties module.
+ * Vocabulary creation and population done in iowa_counties.install.
  */
+
+
+/**
+ * Implements hook_block_info().
+ */
+function iowa_counties_block_info() {
+  $blocks = array();
+  $blocks['iowa_counties_links'] = array(
+    'info' => t('Iowa Counties Links'),
+  );
+
+  return $blocks;
+}
+
+
+/**
+ * Implements hook_block_view().
+ */
+function iowa_counties_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    case 'iowa_counties_links':
+      $block['subject'] = '';
+      $block['content'] = _iowa_counties_links_content();
+      break;
+  }
+
+  return $block;
+}
+
+
+/**
+ * Implements hook_block_configure().
+ */
+function iowa_counties_block_configure($delta = '') {
+  $form = array();
+
+  if ($delta == 'iowa_counties_links') {
+    $form['iowa_counties_link_prefix'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Link Prefix'),
+      '#description' => t('Prefix the link for each county to a drupal path. Do not begin or end with a /. Eg If you have a view at http://example.edu/wildlife-contacts/%1 that takes county name as an argument enter \'wildlife-contacts\'.'),
+      '#size' => 60,
+    );
+  }
+
+  return $form;
+}
+
+
+/**
+ * Implements hook_block_save().
+ */
+function iowa_counties_block_save($delta = '', $edit = array()) {
+  if ($delta == 'iowa_counties_links') {
+    variable_set('iowa_counties_links_prefix', $edit['iowa_counties_link_prefix']);
+  }
+}
+
+
+/**
+ * Generate the HTML for the iowa_counties_links block view.
+ */
+function _iowa_counties_links_content() {
+  $link_prefix = base_path() . variable_get('iowa_counties_links_prefix');
+
+  $markup = '<div class="iowa-counties-links">';
+
+  $vocabulary = taxonomy_vocabulary_machine_name_load('iowa_counties');
+  $terms = taxonomy_get_tree($vocabulary->vid);
+
+  foreach ($terms as $term) {
+    $markup .= '<a href="' . $link_prefix . '/' . urlencode(str_replace(' ', '-', $term->name)) . '">' . $term->name . '</a> | ';
+  }
+
+  // Delete the last 3 chars ' | ' from $markup.
+  $markup = substr($markup, 0, -3);
+
+  $markup .= "</div>";
+
+  return $markup;
+}
