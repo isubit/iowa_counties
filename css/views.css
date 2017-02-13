@@ -1,0 +1,9 @@
+.view-iowa-counties.view-display-id-block .views-row {
+    display: inline;
+}
+.view-iowa-counties.view-display-id-block .views-row::after {
+    content: " | ";
+}
+.view-iowa-counties.view-display-id-block .views-row-last::after {
+    content: "";
+}

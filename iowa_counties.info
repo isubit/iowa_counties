@@ -2,3 +2,4 @@ name = "Iowa Counties"
 description = "Sets up a vocabulary called iowa_counties with all 99 Iowa counties populated."
 core = 7.x
 dependencies[] = taxonomy
+dependencies[] = views

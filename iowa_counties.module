@@ -8,84 +8,21 @@
 
 
 /**
- * Implements hook_block_info().
+ * Implements hook_views_api().
  */
-function iowa_counties_block_info() {
-  $blocks = array();
-  $blocks['iowa_counties_links'] = array(
-    'info' => t('Iowa Counties Links'),
+function iowa_counties_views_api() {
+  return array (
+    'api' => 3.0,
+    'path' => drupal_get_path('module', 'iowa_counties'),
   );
-
-  return $blocks;
 }
 
-
 /**
- * Implements hook_block_view().
+ * Implements hook_views_pre_render().
  */
-function iowa_counties_block_view($delta = '') {
-  $block = array();
-
-  switch ($delta) {
-    case 'iowa_counties_links':
-      $block['subject'] = '';
-      $block['content'] = _iowa_counties_links_content();
-      break;
+function iowa_counties_views_pre_render(&$view) {
+  // Add some default CSS to style the iowa_counties views.
+  if ($view->name == 'iowa_counties') {
+    drupal_add_css(drupal_get_path('module', 'iowa_counties') . '/css/views.css');
   }
-
-  return $block;
-}
-
-
-/**
- * Implements hook_block_configure().
- */
-function iowa_counties_block_configure($delta = '') {
-  $form = array();
-
-  if ($delta == 'iowa_counties_links') {
-    $form['iowa_counties_link_prefix'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Link Prefix'),
-      '#description' => t('Prefix the link for each county to a drupal path. DO NOT begin or end with a /. Eg If you have a view at http://example.edu/wildlife-contacts/%1 that takes county name as an argument enter \'wildlife-contacts\'.'),
-      '#size' => 60,
-      '#default_value' => variable_get('iowa_counties_links_prefix', NULL),
-    );
-  }
-
-  return $form;
-}
-
-
-/**
- * Implements hook_block_save().
- */
-function iowa_counties_block_save($delta = '', $edit = array()) {
-  if ($delta == 'iowa_counties_links') {
-    variable_set('iowa_counties_links_prefix', $edit['iowa_counties_link_prefix']);
-  }
-}
-
-
-/**
- * Generate the HTML for the iowa_counties_links block view.
- */
-function _iowa_counties_links_content() {
-  $link_prefix = base_path() . variable_get('iowa_counties_links_prefix');
-
-  $markup = '<div class="iowa-counties-links">';
-
-  $vocabulary = taxonomy_vocabulary_machine_name_load('iowa_counties');
-  $terms = taxonomy_get_tree($vocabulary->vid);
-
-  foreach ($terms as $term) {
-    $markup .= '<a href="' . $link_prefix . '/' . urlencode(str_replace(' ', '-', $term->name)) . '">' . $term->name . '</a> | ';
-  }
-
-  // Delete the last 3 chars ' | ' from $markup.
-  $markup = substr($markup, 0, -3);
-
-  $markup .= "</div>";
-
-  return $markup;
 }
