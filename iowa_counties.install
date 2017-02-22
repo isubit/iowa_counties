@@ -49,6 +49,15 @@ function iowa_counties_enable() {
  * Implements hook_uninstall().
  */
 function iowa_counties_uninstall() {
+  // Delete the coordinates field on uninstall.
+  if ($instance = field_info_instance('taxonomy_term', 'field_iowa_counties_coord', 'iowa_counties')) {
+    field_delete_instance($instance);
+  }
+  // Delete the actual field if there are no other instances.
+  if (!field_info_field('field_iowa_counties_coord')) {
+    field_delete_field('field_iowa_counties_coord');
+  }
+
   // Delete the iowa_counties vocabulary on uninstall.
   $vocabulary = taxonomy_vocabulary_machine_name_load('iowa_counties');
   taxonomy_vocabulary_delete($vocabulary->vid);
@@ -67,18 +76,43 @@ function _iowa_counties_install_vocabulary() {
   );
   taxonomy_vocabulary_save($new_iowa_counties);
 
+  // Add the coordinates field.
+  // Create the field base.
+  $field = array(
+    'field_name' => 'field_iowa_counties_coord',
+    'type' => 'text',
+  );
+  field_create_field($field);
+
+  // Create field instance on Iowa Counties vocabulary.
+  $instance = array(
+    'field_name' => 'field_iowa_counties_coord',
+    'entity_type' => 'taxonomy_term',
+    'label' => 'Image Map Coordinates',
+    'bundle' => 'iowa_counties',
+    'widget' => array(
+      'type' => 'textfield',
+    ),
+  );
+  field_create_instance($instance);
+
+
   // Populate the Iowa Counties vocabulary.
   $iowa_counties = taxonomy_vocabulary_machine_name_load('iowa_counties');
 
   // Load counties from iowa_counties.txt and make it a nice array to iterate over.
   $counties = file(drupal_get_path('module', 'iowa_counties') . '/iowa_counties.txt');
 
-  foreach ($counties as $county) {
+  foreach ($counties as $county_string) {
+    // 1st item is county name, 2nd item is the image map coordinates. Fields separated by ';'.
+    $county = explode(';', $county_string);
     $term = (object) array(
-      'name' => $county,
+      'name' => trim($county[0]),
       'description' => '',
       'vid' => $iowa_counties->vid,
     );
+
+    $term->field_iowa_counties_coord[LANGUAGE_NONE][0]['value'] = trim($county[1]);
 
     taxonomy_term_save($term);
   }
