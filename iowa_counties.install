@@ -49,7 +49,7 @@ function iowa_counties_enable() {
  * Implements hook_uninstall().
  */
 function iowa_counties_uninstall() {
-  // Delete the coordinates field on uninstall.
+  // Delete the coordinates field instance on uninstall.
   if ($instance = field_info_instance('taxonomy_term', 'field_iowa_counties_coord', 'iowa_counties')) {
     field_delete_instance($instance);
   }
@@ -57,6 +57,16 @@ function iowa_counties_uninstall() {
   if (!field_info_field('field_iowa_counties_coord')) {
     field_delete_field('field_iowa_counties_coord');
   }
+
+  // Delete the SVG Group field on uninstall.
+  if ($instance = field_info_instance('taxonomy_term', 'field_iowa_counties_svg_group', 'iowa_counties')) {
+    field_delete_instance($instance);
+  }
+  // Delete the actual field if there are no other instances.
+  if (!field_info_field('field_iowa_counties_svg_group')) {
+    field_delete_field('field_iowa_counties_svg_group');
+  }
+
 
   // Delete the iowa_counties vocabulary on uninstall.
   $vocabulary = taxonomy_vocabulary_machine_name_load('iowa_counties');
@@ -97,6 +107,27 @@ function _iowa_counties_install_vocabulary() {
   field_create_instance($instance);
 
 
+  // Add the SVG Group field.
+  // Create teh field base.
+  $field = array(
+    'field_name' => 'field_iowa_counties_svg_group',
+    'type' => 'text_long',
+  );
+  field_create_field($field);
+
+  // Create field instance on Iowa Counties vocabulary.
+  $instance = array(
+    'field_name' => 'field_iowa_counties_svg_group',
+    'entity_type' => 'taxonomy_term',
+    'label' => 'SVG Group',
+    'bundle' => 'iowa_counties',
+    'widget' => array(
+      'type' => 'textarea',
+    ),
+  );
+  field_create_instance($instance);
+
+
   // Populate the Iowa Counties vocabulary.
   $iowa_counties = taxonomy_vocabulary_machine_name_load('iowa_counties');
 
@@ -113,6 +144,7 @@ function _iowa_counties_install_vocabulary() {
     );
 
     $term->field_iowa_counties_coord[LANGUAGE_NONE][0]['value'] = trim($county[1]);
+    $term->field_iowa_counties_svg_group[LANGUAGE_NONE][0]['value'] = trim($county[2]);
 
     taxonomy_term_save($term);
   }

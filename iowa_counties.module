@@ -26,3 +26,86 @@ function iowa_counties_views_pre_render(&$view) {
     drupal_add_css(drupal_get_path('module', 'iowa_counties') . '/css/views.css');
   }
 }
+
+/**
+ * Return a string for an SVG image map of iowa counties with options.
+ *
+ * @param $vars
+ *  An array keyed on county name with spaces removed and no punctuation.
+ *  $vars['obrien']['href'] = 'http://example.com/#obrien';
+ *  $vars['obrien']['active'] = true;
+ *
+ * @return
+ *  A string for an SVG with supplied href and active classes.
+ */
+function iowa_counties_svg($vars) {
+
+  // Get a list of tids for counties in map order (left to right, top down).
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'taxonomy_term')
+    ->entityCondition('bundle', array('iowa_counties'))
+    ->propertyOrderBy('tid');
+  $result = $query->execute();
+  $counties = array_keys($result['taxonomy_term']);
+
+  $svg = <<<SVG
+<svg version="1.1" id="iowa-map" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 762 502" style="enable-background:new 0 0 762 502;" xml:space="preserve" vector-effect="non-scaling-stroke">
+<style type="text/css">
+	.county-path {
+		fill: #FFFFFF;
+		stroke: #000000;
+		stroke-miterlimit: 10;
+		}
+	a:focus .county-path,
+	a:hover .county-path,
+	a.active .county-path { fill: #333;}
+
+	a:focus .county-label,
+	a:hover .county-label,
+	a.active .county-label {
+		fill: #fff;
+		stroke: #ffffff;
+		stroke-width: 0.75;
+	}
+
+</style>
+SVG;
+
+  foreach ($counties as $tid) {
+    $county_data = taxonomy_term_load($tid);
+
+    $county_key = iowa_counties_normalize_name($county_data->name);
+
+    // Determine active state;
+    $active = '';
+    if ($vars[$county_key]['active']) {
+      $active = ' class="active"';
+    }
+
+    $svg .= '<a xlink:href="' . $vars[$county_key]['href'] . '"';
+    $svg .= $active;
+    $svg .= '>';
+    $svg .= $county_data->field_iowa_counties_svg_group[LANGUAGE_NONE][0]['value'];
+    $svg .= '</a>';
+
+    $svg .= "\n";
+  }
+
+  $svg .= '</svg>';
+
+  return $svg;
+}
+
+/**
+ * Return a normalized string of a county name.
+ *
+ * @param $name
+ *  Unclean string of county name. Eg. "O'Brien" or "Des Moines".
+ *
+ * @return
+ *   Returns string where name is lowercase, no special characters, no spaces.
+ */
+function iowa_counties_normalize_name($name) {
+  return preg_replace('/[^A-Za-z0-9\-]/', '', strtolower($name));
+}
